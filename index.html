@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Todo-list</title>
     <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <script src="./js/theme.js" defer></script>
     <script src="./js/todo.js" defer></script>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -58,6 +59,7 @@
             id="today-day"
             class="text-xs uppercase tracking-wider text-[#171717]"
           ></p>
+          <button id="theme-toggle" type="button" class="mt-1 cursor-pointer text-xs tracking-wider">[ dark mode ]</button>
         </div>
       </header>
 
@@ -123,10 +125,10 @@
         </button>
       </nav>
 
-      <div class="flex items-center gap-4 px-3 py-2 text-xs font-bold uppercase tracking-widest text-[#171717] mb-2 font-mono">
+      <div class="flex items-center gap-3 px-0 py-2 text-xs font-bold uppercase tracking-widest text-[#171717] mb-2 font-mono">
   <div class="flex-1 text-[#247CB0]">DESTINATION</div>
-  <div class="w-[120px]">LABEL</div>
-  <div class="w-[120px]">STATUS</div>
+  <div class="w-[96px]">LABEL</div>
+  <div class="w-[160px]">STATUS</div>
 </div>
 
 <ul id="allTask" class="bg-transparent"></ul>

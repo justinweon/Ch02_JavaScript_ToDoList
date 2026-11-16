@@ -1,19 +1,19 @@
 /* 연한 회색 타일 */
 .char-cell {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 12px;
-  height: 20px;
-  margin-right: 1.5px;
+  position: relative;
+  display: inline-block;
+  width: 14px;
+  height: 28px;
+  margin-right: 2px;
+  perspective: 140px;
 
   background-color: #e2ded2;
   border: none;
   border-radius: 0;
 
   font-family: 'VT323', monospace;
-  font-size: 16px;
-  line-height: 1;
+  font-size: 22px;
+  line-height: 28px;
   color: #171717;
 
   text-shadow: none;
@@ -34,3 +34,96 @@
 .char-cell.status-red {
   color: #c62828;
 }
+
+/* ---- 플립 효과 ---- */
+.char-cell > i {
+  position: absolute;
+  left: 0;
+  width: 100%;
+  height: 50%;
+  overflow: hidden;
+  background-color: #e2ded2;
+  font-style: normal;
+}
+.char-cell > .u,
+.char-cell > .fu {
+  top: 0;
+}
+.char-cell > .l,
+.char-cell > .fb {
+  bottom: 0;
+}
+.char-cell > i > b {
+  position: absolute;
+  left: 0;
+  width: 100%;
+  height: 28px;
+  line-height: 28px;
+  text-align: center;
+  font-weight: 400;
+}
+.char-cell > .u > b,
+.char-cell > .fu > b {
+  top: 0;
+}
+.char-cell > .l > b,
+.char-cell > .fb > b {
+  bottom: 0;
+}
+.char-cell > .fu {
+  transform-origin: 50% 100%;
+  backface-visibility: hidden;
+}
+.char-cell > .fb {
+  transform-origin: 50% 0;
+  transform: rotateX(90deg);
+  backface-visibility: hidden;
+}
+
+/* 가운데 힌지 선 (약 0.5px) */
+.char-cell::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 50%;
+  height: 1px;
+  margin-top: -0.5px;
+  background: #cfc8b8;
+  transform: scaleY(0.5);
+  z-index: 5;
+}
+
+/* ---- 다크 모드 ---- */
+html[data-theme="dark"] body { background-color: #16150f !important; color: #f2e8cf !important; }
+html[data-theme="dark"] header { border-color: #3a372f !important; }
+html[data-theme="dark"] header > div:first-child > div:first-child { background-color: #2b2924 !important; border-color: #3a372f !important; }
+html[data-theme="dark"] header svg path,
+html[data-theme="dark"] header svg rect { fill: #f2e8cf; }
+html[data-theme="dark"] header h1,
+html[data-theme="dark"] header p { color: #f2e8cf !important; }
+html[data-theme="dark"] #todo-form { background-color: transparent !important; border-color: #3a372f !important; }
+html[data-theme="dark"] #todo-input,
+html[data-theme="dark"] #label-input { background-color: #2b2924 !important; border-color: #3a372f !important; }
+html[data-theme="dark"] #todo-input { color: #6bb7e6 !important; }
+html[data-theme="dark"] #todo-input::placeholder { color: #8a8372 !important; }
+html[data-theme="dark"] #label-input { color: #f2e8cf !important; }
+html[data-theme="dark"] #todo-input:focus,
+html[data-theme="dark"] #label-input:focus { border-color: #f2e8cf !important; }
+html[data-theme="dark"] #todo-form button[type="submit"] { background-color: #f2e8cf !important; color: #16150f !important; }
+html[data-theme="dark"] #todo-form button[type="submit"]:hover { background-color: #d9cfb5 !important; }
+html[data-theme="dark"] nav { color: #6ea8ff !important; }
+html[data-theme="dark"] main > div.font-mono { color: #f2e8cf !important; }
+html[data-theme="dark"] main > div.font-mono > div:first-child { color: #6bb7e6 !important; }
+html[data-theme="dark"] .char-cell { background-color: #2b2924; color: #f2e8cf; }
+html[data-theme="dark"] .char-cell > i { background-color: #2b2924; }
+html[data-theme="dark"] .char-cell.todo-blue { color: #6bb7e6; }
+html[data-theme="dark"] .char-cell.status-red { color: #ff6b5b; }
+html[data-theme="dark"] .char-cell::after { background: #0b0a08; }
+html[data-theme="dark"] [data-edit],
+html[data-theme="dark"] [data-delete],
+html[data-theme="dark"] #allTask form button { color: #f2e8cf !important; }
+html[data-theme="dark"] #allTask form input { color: #6bb7e6 !important; border-color: #3a372f !important; }
+html[data-theme="dark"] #empty-message,
+html[data-theme="dark"] footer { color: #8a8372 !important; }
+html[data-theme="dark"] #theme-toggle { color: #f2e8cf; }

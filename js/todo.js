@@ -54,20 +54,98 @@ let nextId = tasks.reduce((maxId, task) => Math.max(maxId, task.id), 0) + 1;
 
 
 
-function renderTiles(text, totalSlots, colorClass = "") {
-  const cleanText = text.toUpperCase().slice(0, totalSlots);
-  const chars = cleanText.split("");
-  let html = chars
-    .map(
-      (char) =>
-        `<span class="char-cell ${colorClass}">${char === " " ? "&nbsp;" : char}</span>`,
+// ---- 플립 효과 ----
+const FLIP_CHARS = " ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+const prevTiles = {}; // key별로 직전에 화면에 있던 글자
+const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
-    )
-    .join("");
-  const emptyCount = totalSlots - chars.length;
-  // 레퍼런스처럼 남는 자리도 빈 타일 박스로 채워주기
-  if (emptyCount > 0) {
-    html += '<span class="char-cell empty">&nbsp;</span>'.repeat(emptyCount);
+function esc(char) {
+  return char.replace(/[&<>"']/g, (m) => `&#${m.charCodeAt(0)};`);
+}
+
+function tileHtml(from, to, cls) {
+  return `<span class="char-cell ${cls}" data-from="${esc(from)}" data-to="${esc(to)}"><i class="u"><b>${esc(from)}</b></i><i class="l"><b>${esc(from)}</b></i><i class="fu"><b>${esc(from)}</b></i><i class="fb"><b>${esc(from)}</b></i></span>`;
+}
+
+function setTile(tile, char) {
+  tile.querySelectorAll("b").forEach((b) => (b.textContent = char));
+  tile.dataset.from = char;
+}
+
+// 글자 한 번 넘기기: 위쪽이 접히고 아래쪽이 펴짐
+async function flipOnce(tile, next) {
+  const [u, l, fu, fb] = tile.children;
+  const old = tile.dataset.from;
+  u.firstChild.textContent = next;
+  l.firstChild.textContent = old;
+  fu.firstChild.textContent = old;
+  fb.firstChild.textContent = next;
+
+  const a = fu.animate(
+    [{ transform: "rotateX(0deg)" }, { transform: "rotateX(-90deg)" }],
+    { duration: 55, easing: "ease-in", fill: "forwards" },
+  );
+  await a.finished;
+  const c = fb.animate(
+    [{ transform: "rotateX(90deg)" }, { transform: "rotateX(0deg)" }],
+    { duration: 55, easing: "ease-out", fill: "forwards" },
+  );
+  await c.finished;
+
+  setTile(tile, next);
+  a.cancel();
+  c.cancel();
+}
+
+// 목표 글자까지 랜덤 글자 3개를 거쳐 도착
+async function flipTile(tile, delay) {
+  const target = tile.dataset.to;
+  if (tile.dataset.from === target) return;
+  if (reduceMotion) {
+    setTile(tile, target);
+    return;
+  }
+  await sleep(delay);
+  const seq = Array.from(
+    { length: 3 },
+    () => FLIP_CHARS[Math.floor(Math.random() * FLIP_CHARS.length)],
+  );
+  seq.push(target);
+  for (const char of seq) {
+    if (!tile.isConnected) return;
+    if (char !== tile.dataset.from) await flipOnce(tile, char);
+  }
+}
+
+// 한 행의 바뀐 타일만 플립. 바뀐 게 있으면 true
+function playFlip(row, baseDelay) {
+  const columns = row.querySelectorAll(
+    "[data-task-text], [data-label-btn], [data-status-btn]",
+  );
+  let changed = false;
+  columns.forEach((column, columnIndex) => {
+    column.querySelectorAll(".char-cell").forEach((tile, index) => {
+      if (tile.dataset.from !== tile.dataset.to) {
+        changed = true;
+        flipTile(tile, baseDelay + columnIndex * 150 + index * 25);
+      }
+    });
+  });
+  return changed;
+}
+
+function renderTiles(text, totalSlots, colorClass = "", key = "") {
+  const cleanText = text.toUpperCase().slice(0, totalSlots);
+  const prev = prevTiles[key] || "";
+  prevTiles[key] = cleanText;
+  let html = "";
+  for (let i = 0; i < totalSlots; i++) {
+    const to = cleanText[i] || " ";
+    const from = prev[i] || " ";
+    // 레퍼런스처럼 남는 자리도 빈 타일 박스로 채워주기
+    const cls = i < cleanText.length || from !== " " ? colorClass : "empty";
+    html += tileHtml(from, to, cls);
   }
   return html;
 }
@@ -107,6 +185,7 @@ form.addEventListener("submit", (event) => {
 filterButtons.forEach((button) => {
   button.addEventListener("click", () => {
     currentFilter = button.dataset.filter;
+    Object.keys(prevTiles).forEach((key) => delete prevTiles[key]); // 필터 바꾸면 다시 플립
     renderTasks();
   });
 });
@@ -128,16 +207,18 @@ function renderTasks() {
     return true;
   });
 
+  let flipIndex = 0;
+
   visibleTasks.forEach((task) => {
     const row = document.createElement("li");
 
-    row.className = "group flex items-center gap-4 px-3 py-2 text-xl";
+    row.className = "group flex items-center gap-3 px-0 py-2 text-xl";
 
 
-    const todoHtml = renderTiles(task.text, 20, "todo-blue");
-    const labelHtml = renderTiles(task.label, 6);
+    const todoHtml = renderTiles(task.text, 20, "todo-blue", `${task.id}:text`);
+    const labelHtml = renderTiles(task.label, 6, "", `${task.id}:label`);
     const statusColor = task.status === "FINAL CALL" ? "status-red" : "";
-    const statusHtml = renderTiles(task.status, 10, statusColor);
+    const statusHtml = renderTiles(task.status, 10, statusColor, `${task.id}:status`);
 
 
     row.innerHTML = `
@@ -154,7 +235,7 @@ function renderTasks() {
         </div>
       </div>
 
-            <div class="w-[100px] flex items-center flex-shrink-0">
+            <div class="w-[96px] flex items-center flex-shrink-0">
         <button
           type="button"
           data-label-btn
@@ -166,7 +247,7 @@ function renderTasks() {
       </div>
 
 
-      <div class="w-[140px] flex items-center justify-end flex-shrink-0">
+      <div class="w-[160px] flex items-center justify-end flex-shrink-0">
         <button type="button" data-status-btn title="상태 변경" class="cursor-pointer flex items-center transition hover:brightness-125">
           ${statusHtml}
         </button>
@@ -225,6 +306,9 @@ function renderTasks() {
       startEditing(task, taskText, editButton);
     });
     allTask.append(row);
+    if (playFlip(row, flipIndex * 110)) {
+      flipIndex += 1;
+    }
   });
 
 
